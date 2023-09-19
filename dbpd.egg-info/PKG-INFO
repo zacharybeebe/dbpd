@@ -1,0 +1,224 @@
+Metadata-Version: 2.1
+Name: dbpd
+Version: 1.1
+Summary: Python module for establishing a working relationship between relational databases and Pandas DataFrames
+Home-page: https://github.com/zacharybeebe/dbpd
+Author: Zach Beebe
+Author-email: z.beebe@yahoo.com
+License: MIT
+Keywords: database,pandas,DataFrameAccess,MySQL,Oracle,Postgres,SQLite
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Science/Research
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+# dbpd
+
+**The main theme of this module is to establish a working relationship between
+relational databases and Pandas DataFrames; because these objects are tabular in nature,
+it reveals itself to be an efficient way to inspect, manage and manipulate a given database.**
+
+The dbpd.BaseDBPD class is the parent class for six child classes that are specific to different database types:<br>
+<br>dbpd.Access
+<br>dbpd.MySQL
+<br>dbpd.Oracle
+<br>dbpd.Postgres
+<br>dbpd.SQLite
+<br>dbpd.SQLiteInMemory
+
+Abstractions have been created such that working with these various database types
+is consistent throughout the user's code base.
+
+The ```query() ``` method is responsible for returning SELECT sql statements as
+their respective DataFrames. However the ```query()``` method can also be used to make changes to
+the database (such as INSERT, UPDATE, DELETE, etc.)
+
+Users are expected to write their own sql statements to query the database, and parameterized
+queries are accepted and encouraged as well.
+
+This is not meant to be an Object-Relational-Mapper (ORM) and has no such functionality, although
+it may be possible for users to create their own ORM using the classes herein.
+
+
+DOCUMENTATION
+https://zacharybeebe.github.io/dbpd/
+
+## Installation
+```bash
+pip install dbpd
+```
+
+
+## Connecting to a Database #1 - Direct
+```python
+from dbpd import Oracle
+
+oracle = Oracle(
+    username='example_username',
+    password='example_password',
+    host='127.0.0.1',
+    sid='prod',
+    port=5000,
+    threaded=True,
+    description='My Example Oracle database',
+    show_description=True
+)
+dataframe = oracle.query('SELECT * FROM example_table')
+oracle.close()
+```
+
+
+## Connecting to a Database #2 - Inheritance
+```python
+from dbpd import Postgres
+
+class ExamplePostgres(Postgres):
+    def __init__(self):
+        super(ExamplePostgres, self).__init__(
+            username='example_username',
+            password='example_password',
+            host='127.0.0.1',
+            database_name='example',
+            port=5000,
+            postgres_schema='public',
+            description='My Example Postgres database',
+            show_description=True
+        )
+    
+    def awesome_custom_method(self):
+        print('I love pandas and databases')
+
+pg = ExamplePostgres()
+dataframe = pg.query('SELECT * FROM public.example_table')
+pg.close()
+```
+
+
+
+## Other Examples
+```python
+from dbpd import Access, MySQL, SQLite, SQLiteInMemory
+
+# Connect to existing Access Database
+existing_access = Access(
+    filepath='path/to/existing/access.accdb',
+    fernet_encryption_key=b'<theFernetEncryptionKeyForYourDatabase>',
+    description='My Existing Access database',
+    show_description=True
+)
+existing_access.close()
+
+#####################################################################
+# Create new, blank Access Database
+new_access = Access(
+    filepath='path/to/non-existent/access.accdb',
+    fernet_encryption_key=b'<theFernetEncryptionKeyForYourDatabase>',
+    description='My New Access database',
+    show_description=True
+)
+new_access.query(
+    sql="""
+    CREATE TABLE my_table (
+        [a_number]  INTEGER,
+        [a_date]    DATETIME,
+        [a_double]  DOUBLE,
+        [a_string]  VARCHAR
+    );
+    """
+)
+new_access.commit()
+new_access.insert_values(
+    table_name='my_table',
+    a_number=1,
+    a_date=new_access.dt_now(),
+    a_double=22.22,
+    a_string='HelloWorld'
+)
+new_access.commit()
+new_access.close()
+
+#####################################################################
+# Connect to MySQL Database
+mysql = MySQL(
+    username='example_username',
+    password='example_password',
+    host='127.0.0.1',
+    database_name='example',
+    port=5000
+)
+# Export query to SQLite database
+dataframe = mysql.export_query_to_sqlite(
+    out_filepath='path/to/export/sqlite.db',
+    out_table_name='exported_table',
+    in_sql="""
+        SELECT
+            A.*,
+            B.*
+        FROM
+            example_table A
+        LEFT JOIN (
+            SELECT
+                *
+            FROM
+                other_table
+        ) B ON A.id = B.id
+        WHERE
+            A.column = :value
+    """,
+    in_parameters={'value': 'This value'}      
+)
+mysql.close()
+
+#####################################################################
+# Connect to an Existing SQLite database
+existing_sqlite = SQLite(
+    filepath='path/to/existing/sqlite.db',
+)
+existing_sqlite.close()
+
+#####################################################################
+# Create a new, blank SQLite database
+new_sqlite = SQLite(
+    filepath='path/to/non-existent/sqlite.db',
+)
+new_sqlite.close()
+
+#####################################################################
+# Create a new in-memory SQLite database and save to disk
+in_mem_sqlite = SQLiteInMemory()
+in_mem_sqlite.query(
+    sql="""
+        CREATE TABLE my_table (
+            [a_number]  INTEGER,
+            [a_date]    DATETIME,
+            [a_double]  DOUBLE,
+            [a_string]  VARCHAR
+        );
+        """
+)
+in_mem_sqlite.commit()
+in_mem_sqlite.insert_values(
+    table_name='my_table',
+    a_number=1,
+    a_date=new_access.dt_now(),
+    a_double=22.22,
+    a_string='HelloWorld'
+)
+in_mem_sqlite.commit()
+saved_sqlite = in_mem_sqlite.save_as(
+    filepath='path/to/sqlite.db',
+    return_new_database_manager=True
+)
+in_mem_sqlite.close()
+dataframe = saved_sqlite.query('SELECT * FROM my_table')
+saved_sqlite.close()
+```
+
+
+		
+
+

@@ -1,7 +1,11 @@
 Change Log
 ==========
 
-v1.0 (09/18/202)
+v1.0 (09/18/2023)
 ------------------
--First Release
+- First Release
+
+v.1.1 (09/19/2023)
+------------------
+- Had to version up because there was an error with package build
 

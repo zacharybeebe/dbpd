@@ -1,0 +1,14 @@
+cffi
+cryptography
+greenlet
+numpy
+pandas
+pycparser
+pyodbc
+python-dateutil
+pytz
+pywin32
+six
+SQLAlchemy
+typing_extensions
+tzdata
