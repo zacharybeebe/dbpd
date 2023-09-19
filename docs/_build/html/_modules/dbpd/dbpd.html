@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dbpd.dbpd &mdash; dbpd 1.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            dbpd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">dbpd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dbpd.dbpd</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dbpd.dbpd</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pyodbc</span>
+<span class="kn">import</span> <span class="nn">sqlalchemy</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">cryptography.fernet</span> <span class="kn">import</span> <span class="n">Fernet</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha1</span><span class="p">,</span> <span class="n">sha224</span><span class="p">,</span> <span class="n">sha256</span><span class="p">,</span> <span class="n">sha384</span><span class="p">,</span> <span class="n">sha512</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">text</span><span class="p">,</span> <span class="n">Engine</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">sessionmaker</span><span class="p">,</span> <span class="n">Session</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">from</span> <span class="nn">win32com.client</span> <span class="kn">import</span> <span class="n">Dispatch</span>
+
+
+<div class="viewcode-block" id="BaseDBPD">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD">[docs]</a>
+<span class="k">class</span> <span class="nc">BaseDBPD</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class is the parent class for six child classes that are specific to different database types:</span>
+<span class="sd">        Access</span>
+<span class="sd">        MySQL</span>
+<span class="sd">        Oracle</span>
+<span class="sd">        Postgres</span>
+<span class="sd">        SQLite</span>
+<span class="sd">        SQLiteInMemory</span>
+
+<span class="sd">    Abstractions have been created such that working with these various database types</span>
+<span class="sd">    is consistent throughout the user&#39;s code base.</span>
+
+<span class="sd">    The main theme of this class is establish a working relationship between</span>
+<span class="sd">    relational databases and Pandas DataFrames; because these objects are tabular in nature,</span>
+<span class="sd">    it reveals itself to be an efficient way to manage and manipulate a given database</span>
+
+<span class="sd">    The query() method of this class is responsible for returning SELECT sql statements as</span>
+<span class="sd">    their respective DataFrames. However the query() method can also be used to make changes to</span>
+<span class="sd">    the database (such as INSERT, UPDATE, DELETE, etc.)</span>
+
+<span class="sd">    Users are expected to write their own sql statements to query the database, and parameterized</span>
+<span class="sd">    queries are accepted and encouraged as well.</span>
+
+<span class="sd">    This is not meant to be an Object-Relational-Mapper (ORM) and has no such functionality, although</span>
+<span class="sd">    it may be possible for users to create their own ORM using the classes herein.</span>
+
+<span class="sd">    See the README for examples of how to get started</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Exceptions</span>
+<div class="viewcode-block" id="BaseDBPD.AccessFileError">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.AccessFileError">[docs]</a>
+    <span class="k">class</span> <span class="nc">AccessFileError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Invalid &quot;filepath&quot; argument: &quot;</span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s1">&quot;. Files must be &quot;.accdb&quot; or &quot;.mdb&quot; files&#39;</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">BaseDBPD</span><span class="o">.</span><span class="n">AccessFileError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.EncryptionKeyError">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.EncryptionKeyError">[docs]</a>
+    <span class="k">class</span> <span class="nc">EncryptionKeyError</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">BaseDBPD</span><span class="o">.</span><span class="n">EncryptionKeyError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;No &quot;fernet_encryption_key&quot; attribute has been set&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.ExcelFileError">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.ExcelFileError">[docs]</a>
+    <span class="k">class</span> <span class="nc">ExcelFileError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Invalid &quot;filepath&quot; argument: &quot;</span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s1">&quot;. Files must be &quot;.xlsx&quot; files&#39;</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">BaseDBPD</span><span class="o">.</span><span class="n">ExcelFileError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.InitFileError">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.InitFileError">[docs]</a>
+    <span class="k">class</span> <span class="nc">InitFileError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Invalid &quot;filepath&quot; argument: &quot;</span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s1">&quot;. Files for init must be Access or SQLite files&#39;</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">BaseDBPD</span><span class="o">.</span><span class="n">InitFileError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.SqliteFileError">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.SqliteFileError">[docs]</a>
+    <span class="k">class</span> <span class="nc">SqliteFileError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Invalid &quot;filepath&quot; argument: &quot;</span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s1">&quot;. Files must be &quot;.db&quot; or &quot;.sqlite&quot; files&#39;</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">BaseDBPD</span><span class="o">.</span><span class="n">SqliteFileError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.flatten_sql">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.flatten_sql">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">flatten_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+            <span class="n">sql</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">replace</span><span class="p">((</span><span class="s1">&#39; &#39;</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)),</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sql</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span></div>
+
+
+    <span class="n">TABLE_NAME_QUERIES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1"># Note that MS Access info will be handled by a pyodbc.connect.cursor object</span>
+        <span class="s1">&#39;oracle&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span>
+<span class="s2">                table_name AS name</span>
+<span class="s2">            FROM </span>
+<span class="s2">                user_tables </span>
+<span class="s2">            ORDER BY </span>
+<span class="s2">                table_name</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span>
+
+        <span class="s1">&#39;postgres&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span>
+<span class="s2">                table_schema || &#39;.&#39; || table_name AS name</span>
+<span class="s2">            FROM </span>
+<span class="s2">                information_schema.tables </span>
+<span class="s2">            WHERE</span>
+<span class="s2">                table_schema = &#39;</span><span class="si">{schema}</span><span class="s2">&#39;</span>
+<span class="s2">            ORDER BY </span>
+<span class="s2">                table_schema, </span>
+<span class="s2">                table_name</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span>
+
+        <span class="s1">&#39;mysql&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span>
+<span class="s2">                table_name AS name </span>
+<span class="s2">            FROM </span>
+<span class="s2">                information_schema.tables</span>
+<span class="s2">            WHERE </span>
+<span class="s2">                table_schema = &#39;</span><span class="si">{database_name}</span><span class="s2">&#39;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span>
+
+        <span class="s1">&#39;sqlite&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span>
+<span class="s2">                name</span>
+<span class="s2">            FROM </span>
+<span class="s2">                sqlite_schema </span>
+<span class="s2">            WHERE </span>
+<span class="s2">                type = &#39;table&#39; </span>
+<span class="s2">            ORDER BY </span>
+<span class="s2">                name</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+    <span class="p">}</span>
+
+    <span class="n">COLUMN_NAME_QUERIES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1"># Note that MS Access info will be handled by a pyodbc.connect.cursor object</span>
+        <span class="s1">&#39;oracle&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span>
+<span class="s2">                column_name AS name</span>
+<span class="s2">            FROM </span>
+<span class="s2">                user_tab_columns </span>
+<span class="s2">            WHERE </span>
+<span class="s2">                table_name = &#39;</span><span class="si">{table_name}</span><span class="s2">&#39;</span>
+<span class="s2">            ORDER BY</span>
+<span class="s2">                column_name</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span>
+
+        <span class="s1">&#39;postgres&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span>
+<span class="s2">                column_name AS name</span>
+<span class="s2">            FROM </span>
+<span class="s2">                information_schema.columns </span>
+<span class="s2">            WHERE </span>
+<span class="s2">                table_schema || &#39;.&#39; || table_name = &#39;</span><span class="si">{table_name}</span><span class="s2">&#39;</span>
+<span class="s2">            ORDER BY</span>
+<span class="s2">                column_name</span>
+
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span>
+
+        <span class="s1">&#39;mysql&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT </span>
+<span class="s2">                column_name AS name</span>
+<span class="s2">            FROM</span>
+<span class="s2">                information_schema.columns</span>
+<span class="s2">            WHERE </span>
+<span class="s2">                table_schema = &#39;</span><span class="si">{database_name}</span><span class="s2">&#39; </span>
+<span class="s2">                AND table_name = &#39;</span><span class="si">{table_name}</span><span class="s2">&#39;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span>
+
+        <span class="s1">&#39;sqlite&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            PRAGMA table_info(</span><span class="si">{table_name}</span><span class="s2">)</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">connection_credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">database_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">postgres_schema</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">mysql_database_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">filepath</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">sqlite_in_memory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="n">show_description</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">fernet_encryption_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">connection_kwargs</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database_type</span> <span class="o">=</span> <span class="n">database_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postgres_schema</span> <span class="o">=</span> <span class="n">postgres_schema</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mysql_database_name</span> <span class="o">=</span> <span class="n">mysql_database_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fernet_encryption_key</span> <span class="o">=</span> <span class="n">fernet_encryption_key</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">,</span> <span class="n">pyodbc</span><span class="o">.</span><span class="n">Connection</span><span class="p">,</span> <span class="n">Session</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Engine</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_ext</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">recent_query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recent_df</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">filepath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Start In-Memory Sqlite Database OR SQLAlchemy Engine for Postgres or Oracle</span>
+            <span class="k">if</span> <span class="n">sqlite_in_memory</span><span class="p">:</span>
+                <span class="n">pass_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_callable_kwargs</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">passed_kwargs</span><span class="o">=</span><span class="n">connection_kwargs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="s1">&#39;:memory:&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">pass_kwargs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pass_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_callable_kwargs</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">sqlalchemy</span><span class="o">.</span><span class="n">create_engine</span><span class="p">,</span> <span class="n">passed_kwargs</span><span class="o">=</span><span class="n">connection_kwargs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">sqlalchemy</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">connection_credentials</span><span class="p">,</span> <span class="o">**</span><span class="n">pass_kwargs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.sqlite&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.db&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="si">}</span><span class="s1">&quot; does not exist, a blank database will be created.&#39;</span><span class="p">)</span>
+                <span class="n">pass_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_callable_kwargs</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">passed_kwargs</span><span class="o">=</span><span class="n">connection_kwargs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">file_ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filepath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">filepath</span><span class="p">,</span> <span class="o">**</span><span class="n">pass_kwargs</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.accdb&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.mdb&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="si">}</span><span class="s1">&quot; does not exist, a blank database will be created.&#39;</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">create_access_database</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="n">e</span>
+                <span class="n">pass_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_callable_kwargs</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">pyodbc</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">passed_kwargs</span><span class="o">=</span><span class="n">connection_kwargs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">file_ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filepath</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">driver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_driver</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span> <span class="o">=</span> <span class="n">pyodbc</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="o">**</span><span class="n">pass_kwargs</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">InitFileError</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">show_description</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Access and/or SQLite specific methods ##################################################################</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_access_generate_create_table_sql_from_dataframe</span><span class="p">(</span><span class="n">dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates the CREATE TABLE sql statement for MS Access from a given DataFrame. This private method is used</span>
+<span class="sd">        in the export_query_to_access() method, as pandas does not have support for MS Access with the</span>
+<span class="sd">        DataFrame&#39;s to_sql() method.</span>
+
+<span class="sd">        :param dataframe: The dataframe which will represent the table schema</span>
+<span class="sd">        :param table_name: The name of the table that should be created</span>
+<span class="sd">        :return: str - The formatted CREATE TABLE sql statement</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">create_table_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;CREATE TABLE </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s1"> (</span><span class="se">\n\t</span><span class="s1">&#39;</span>
+        <span class="n">col_types</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">dtypes</span><span class="p">,</span> <span class="n">columns</span><span class="p">):</span>
+            <span class="n">dtype_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dtype_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">):</span>
+                <span class="n">access_type</span> <span class="o">=</span> <span class="s1">&#39;INTEGER&#39;</span>
+            <span class="k">elif</span> <span class="n">dtype_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">):</span>
+                <span class="n">access_type</span> <span class="o">=</span> <span class="s1">&#39;DOUBLE&#39;</span>
+            <span class="k">elif</span> <span class="n">dtype_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">):</span>
+                <span class="n">access_type</span> <span class="o">=</span> <span class="s1">&#39;DATETIME&#39;</span>
+            <span class="k">elif</span> <span class="n">dtype_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;bool&#39;</span><span class="p">):</span>
+                <span class="n">access_type</span> <span class="o">=</span> <span class="s1">&#39;BIT&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">access_type</span> <span class="o">=</span> <span class="s1">&#39;VARCHAR&#39;</span>
+            <span class="n">col_types</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s1">] </span><span class="si">{</span><span class="n">access_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">create_table_sql</span> <span class="o">+=</span> <span class="s1">&#39;,</span><span class="se">\n\t</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">col_types</span><span class="p">)</span>
+        <span class="n">create_table_sql</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">);&#39;</span>
+        <span class="k">return</span> <span class="n">create_table_sql</span>
+
+    <span class="k">def</span> <span class="nf">_access_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the column names of a given table for MS Access</span>
+
+<span class="sd">        :param table_name: The name of the table</span>
+<span class="sd">        :return: list - The column names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;SELECT TOP 1 * FROM </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">description</span><span class="p">]</span>
+        <span class="n">columns</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">columns</span>
+
+    <span class="k">def</span> <span class="nf">_access_sqlite_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This private method is used by the main query() method. Because Access and SQLite are not using SQLAlchemy, the</span>
+<span class="sd">        DataFrames have to be constructed differently, if the sql query returns zero results, either it DOES return zero</span>
+<span class="sd">        results OR the sql statement is not a SELECT statement, the return value will be None. This is consistent with</span>
+<span class="sd">        the query() method returning None under the same circumstances.</span>
+
+<span class="sd">        :param sql: The sql statement to be executed</span>
+<span class="sd">        :param parameters: Parameters for a parameterized query</span>
+<span class="sd">        :return: DataFrame of the query results or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_type</span> <span class="o">==</span> <span class="s1">&#39;sqlite&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="o">*</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="c1"># Modify queries (UPDATE, INSERT, etc) will not have a cursor description, so return None</span>
+        <span class="k">if</span> <span class="n">cursor</span><span class="o">.</span><span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">description</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">df_data</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">columns</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df_data</span><span class="p">:</span>
+                        <span class="n">df_data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">df_data</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df_data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_access_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of all of the table names</span>
+
+<span class="sd">        :return: list - A list of table names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">table_info</span><span class="o">.</span><span class="n">table_name</span> <span class="k">for</span> <span class="n">table_info</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">tables</span><span class="p">(</span><span class="n">tableType</span><span class="o">=</span><span class="s1">&#39;TABLE&#39;</span><span class="p">)]</span>
+        <span class="n">tables</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">tables</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_create_access_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new, blank MS Access database</span>
+
+<span class="sd">        :param filepath: The filepath at which the database should be created</span>
+<span class="sd">        :return: str - The filepath with forward slashes replaced with backslashes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">access_app</span> <span class="o">=</span> <span class="n">Dispatch</span><span class="p">(</span><span class="s2">&quot;Access.Application&quot;</span><span class="p">)</span>
+            <span class="n">engine</span> <span class="o">=</span> <span class="n">access_app</span><span class="o">.</span><span class="n">DBEngine</span>
+            <span class="n">workspace</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">Workspaces</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">language</span> <span class="o">=</span> <span class="s1">&#39;;LANGID=0x0409;CP=1252;COUNTRY=0&#39;</span>
+            <span class="n">create</span> <span class="o">=</span> <span class="n">workspace</span><span class="o">.</span><span class="n">CreateDatabase</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">language</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">fp</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">access_app</span><span class="o">.</span><span class="n">DoCmd</span><span class="o">.</span><span class="n">CloseDatabase</span>
+            <span class="n">access_app</span><span class="o">.</span><span class="n">Quit</span>
+            <span class="n">create</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">workspace</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">engine</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">access_app</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_create_access_sqlite_database</span><span class="p">(</span>
+            <span class="n">connection</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pyodbc</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">],</span>
+            <span class="n">create_table_schema_sql_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Can be used to create tables from a list of CREATE TABLE sql statements, used by both the public methods:</span>
+<span class="sd">        create_access_database() and create_sqlite_database()</span>
+
+<span class="sd">        :param connection: The connection object for the database</span>
+<span class="sd">        :param create_table_schema_sql_list: The list of CREATE TABLE sql statements</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">create_table_schema_sql_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">create_table</span> <span class="ow">in</span> <span class="n">create_table_schema_sql_list</span><span class="p">:</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">create_table</span><span class="p">)</span>
+                <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">connection</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Private Utility methods ########################################################################################################################</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_filter_callable_kwargs</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="nb">callable</span><span class="p">,</span> <span class="n">passed_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filters the keyword arguments, getting only the key-value pairs that can</span>
+<span class="sd">        actually be passed to a particular function/method (&quot;func&quot;)</span>
+
+<span class="sd">        :param func: A function/method to be inspected</span>
+<span class="sd">        :param passed_kwargs: The keyword arguments trying to be passed to the function/method</span>
+<span class="sd">        :return: dict - The filtered keyword arguments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">passed_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">args</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_info_query_list</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">info_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;tables&#39;</span><span class="p">,</span> <span class="s1">&#39;columns&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;tables&#39;</span><span class="p">,</span>
+            <span class="n">table_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># need table_name if info_type = &#39;columns&#39;</span>
+            <span class="n">show_names</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Used by the table_names() and column_names() public methods to abstract getting this info for various database types</span>
+
+<span class="sd">        :param info_type: Either &#39;tables&#39; or &#39;columns&#39;</span>
+<span class="sd">        :param table_name: If getting the column names, the name of the table needs to be passed</span>
+<span class="sd">        :param show_names: Boolean indicating if the table or column names should be printed to the console</span>
+<span class="sd">        :return: list - Either an empty list or a list of the table or column names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">info_type</span> <span class="o">==</span> <span class="s1">&#39;tables&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_type</span> <span class="o">==</span> <span class="s1">&#39;access&#39;</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access_tables</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">info</span><span class="p">:</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postgres_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">sql</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TABLE_NAME_QUERIES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">database_type</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postgres_schema</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mysql_database_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">sql</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TABLE_NAME_QUERIES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">database_type</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mysql_database_name</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sql</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TABLE_NAME_QUERIES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">database_type</span><span class="p">]</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_type</span> <span class="o">==</span> <span class="s1">&#39;access&#39;</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access_columns</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">table_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">info</span><span class="p">:</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sql</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">COLUMN_NAME_QUERIES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">database_type</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">table_name</span><span class="p">)</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">info</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">show_names</span><span class="p">:</span>
+                <span class="n">new_lines</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">new_lines</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">info</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_warn</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prints a yellow-colored warning to the console</span>
+
+<span class="sd">        :param text: The warning message</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\033</span><span class="s1">[0;33;49mWARNING: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1"> </span><span class="se">\033</span><span class="s1">[0m&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Public Utility methods #########################################################################################################################</span>
+<div class="viewcode-block" id="BaseDBPD.access_driver">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.access_driver">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">access_driver</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the MS Access Driver string that can be used by pyodbc.connect()</span>
+
+<span class="sd">        :param filepath: The filepath of the Access database</span>
+<span class="sd">        :return: str - The filepath with backward slashes replaced with forward slashes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.accdb&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;mdb&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">cls</span><span class="o">.</span><span class="n">AccessFileError</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;DRIVER=</span><span class="se">{{</span><span class="s1">Microsoft Access Driver (*.mdb, *.accdb)</span><span class="se">}}</span><span class="s1">;DBQ=</span><span class="si">{</span><span class="n">fp</span><span class="si">}</span><span class="s1">;&#39;</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.convert_numpy_value">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.convert_numpy_value">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">convert_numpy_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">null_zeroes_for_columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Possibly converts a numpy value (typically this value comes from a DataFrame) to its respective Python value</span>
+
+<span class="sd">        :param value: The value to be possibly be converted</span>
+<span class="sd">        :param column: The column name of the DataFrame in which the value resides - This is only used for nulling zero values</span>
+<span class="sd">        :param null_zeroes_for_columns: A list of columns where zeros should be nullified</span>
+<span class="sd">        :return: The converted value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">if</span> <span class="n">null_zeroes_for_columns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">null_zeroes_for_columns</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">v</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.create_access_database">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.create_access_database">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_access_database</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">create_table_schema_sql_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new MS Access database, this method can also accept a list of CREATE TABLE sql statements in which</span>
+<span class="sd">        to define the database table schema.</span>
+
+<span class="sd">        :param filepath: The filepath at which the database should be created</span>
+<span class="sd">        :param create_table_schema_sql_list: The list of CREATE TABLE sql statements</span>
+<span class="sd">        :return: The filepath with forward slashes replaced with backslashes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.accdb&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.mdb&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">cls</span><span class="o">.</span><span class="n">AccessFileError</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create_access_new</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="n">driver</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">access_driver</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">pyodbc</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_create_access_sqlite_database</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span> <span class="n">create_table_schema_sql_list</span><span class="o">=</span><span class="n">create_table_schema_sql_list</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">fp</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">fp</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.create_sqlite_database">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.create_sqlite_database">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_sqlite_database</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">create_table_schema_sql_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new SQLite database, this method can also accept a list of CREATE TABLE sql statements in which</span>
+<span class="sd">        to define the database table schema.</span>
+
+<span class="sd">        :param filepath: The filepath at which the database should be created</span>
+<span class="sd">        :param create_table_schema_sql_list: The list of CREATE TABLE sql statements</span>
+<span class="sd">        :return: The absolute path of the filepath</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.db&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.sqlite&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">cls</span><span class="o">.</span><span class="n">SqliteFileError</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_create_access_sqlite_database</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span> <span class="n">create_table_schema_sql_list</span><span class="o">=</span><span class="n">create_table_schema_sql_list</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">fp</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">fp</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.init_table_schemas_from_files">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.init_table_schemas_from_files">[docs]</a>
+    <span class="k">def</span> <span class="nf">init_table_schemas_from_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">create_table_sql_files_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">commit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Will create tables within a BLANK database from files read in the create_table_sql_files_list. Note that</span>
+<span class="sd">        if a database already contains tables, the method will not proceed and a warning will be printed</span>
+<span class="sd">        to the console. For creating new tables within an existing database, use the query() method directly.</span>
+
+<span class="sd">        :param create_table_sql_files_list: A list of filepaths that contain the CREATE TABLE sql statements</span>
+<span class="sd">        :param commit: Should this transaction be committed</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sql_read_from_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">create_table_sql_files_list</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">sql_read_from_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_table_schemas_from_sql</span><span class="p">(</span><span class="n">create_table_sql_statements_list</span><span class="o">=</span><span class="n">sql_read_from_files</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="n">commit</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.init_table_schemas_from_sql">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.init_table_schemas_from_sql">[docs]</a>
+    <span class="k">def</span> <span class="nf">init_table_schemas_from_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">create_table_sql_statements_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">commit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Will create tables within a BLANK database CREATE TABLE sql statements in the create_table_sql_statements_list. Note that</span>
+<span class="sd">        if a database already contains tables, the method will not proceed and a warning will be printed</span>
+<span class="sd">        to the console. For creating new tables within an existing database, use the query() method directly.</span>
+
+<span class="sd">        :param create_table_sql_statements_list: A list of the CREATE TABLE sql statements</span>
+<span class="sd">        :param commit: Should this transaction be committed</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_names</span><span class="p">(</span><span class="n">show_names</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> already has tables, cannot initialize schema, use query() method to modify schema.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">create_table_sql_statements_list</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">commit</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.decrypt_value_static">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.decrypt_value_static">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">decrypt_value_static</span><span class="p">(</span><span class="n">fernet_encryption_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">original_encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">ttl</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This static method can be used directly if the user has an encryption key but would not like to start a database session</span>
+
+<span class="sd">        :param fernet_encryption_key: The encryption key</span>
+<span class="sd">        :param value: The value to be decrypted</span>
+<span class="sd">        :param original_encoding: The original encoding of the value</span>
+<span class="sd">        :param ttl: The timeout of the key</span>
+<span class="sd">        :return: str - The string representation of the decrypted value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fernet</span> <span class="o">=</span> <span class="n">Fernet</span><span class="p">(</span><span class="n">fernet_encryption_key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fernet</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="n">ttl</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="n">original_encoding</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.decrypt_value">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.decrypt_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">decrypt_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">original_encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">ttl</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Users can pass a Fernet Encryption Key to the constructor of this class, possibly in the case that fields within</span>
+<span class="sd">        the database are encrypted. Using this key, this method will decrypt a value. If no key is passed in the constructor</span>
+<span class="sd">        (or not set after the fact) this method will raise an Exception.</span>
+
+<span class="sd">        :param value: The value to be decrypted</span>
+<span class="sd">        :param original_encoding: The original encoding of the value</span>
+<span class="sd">        :param ttl: The timeout of the key</span>
+<span class="sd">        :return: str - The string representation of the decrypted value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fernet_encryption_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">EncryptionKeyError</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decrypt_value_static</span><span class="p">(</span><span class="n">fernet_encryption_key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fernet_encryption_key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">original_encoding</span><span class="o">=</span><span class="n">original_encoding</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="n">ttl</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.encrypt_value_static">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.encrypt_value_static">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">encrypt_value_static</span><span class="p">(</span><span class="n">fernet_encryption_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This static method can be used directly if the user has an encryption key but would not like to start a database session</span>
+
+<span class="sd">        :param fernet_encryption_key: The encryption key</span>
+<span class="sd">        :param value: The value to be encrypted, note that this value will be turned into a string and then bytes before encryption</span>
+<span class="sd">        :param encoding: The encoding of the value to bytes</span>
+<span class="sd">        :return: bytes - The encrypted value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="n">fernet</span> <span class="o">=</span> <span class="n">Fernet</span><span class="p">(</span><span class="n">fernet_encryption_key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fernet</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.encrypt_value">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.encrypt_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">encrypt_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Users can pass a Fernet Encryption Key to the constructor of this class, possibly in the case that fields within</span>
+<span class="sd">        the database are encrypted. Using this key, this method will encrypt a value. If no key is passed in the constructor</span>
+<span class="sd">        (or not set after the fact) this method will raise an Exception.</span>
+
+<span class="sd">        :param value: The value to be encrypted, note that this value will be turned into a string and then bytes before encryption</span>
+<span class="sd">        :param encoding: The encoding of the value to bytes</span>
+<span class="sd">        :return: bytes - The encrypted value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fernet_encryption_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">EncryptionKeyError</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">encrypt_value_static</span><span class="p">(</span><span class="n">fernet_encryption_key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fernet_encryption_key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.dt_now">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.dt_now">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">dt_now</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shorthand for returning a datetime.datetime.now() object</span>
+<span class="sd">        :return: datetime.datetime.now()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.dt_today">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.dt_today">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">dt_today</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shorthand for returning a datetime.date.today() object</span>
+<span class="sd">        :return: datetime.date.today()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.generate_fernet_encryption_key">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.generate_fernet_encryption_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">generate_fernet_encryption_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Will generate a Fernet Encryption Key. Note that if values are encrypted and inserted into the database</span>
+<span class="sd">        using this key, then this key should be stored somewhere secure as this will be the only key which</span>
+<span class="sd">        will correctly decrypt the values.</span>
+
+<span class="sd">        :return: bytes - The Fernet Encryption Key</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s1">&#39;Generating Fernet encryption key, make sure to save this key somewhere secure&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Fernet</span><span class="o">.</span><span class="n">generate_key</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.isna">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.isna">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">isna</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if a value &quot;isna&quot; according to pandas or if the value is None</span>
+
+<span class="sd">        :param value: The value to be checked</span>
+<span class="sd">        :return: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.sha_hash">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.sha_hash">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">sha_hash</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">sha_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;sha1&#39;</span><span class="p">,</span> <span class="s1">&#39;sha224&#39;</span><span class="p">,</span> <span class="s1">&#39;sha256&#39;</span><span class="p">,</span> <span class="s1">&#39;sha384&#39;</span><span class="p">,</span> <span class="s1">&#39;sha512&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sha256&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Will hash a value given the &quot;sha_type&quot; hashing algorithm. Note that the default hashing algorithm is sha256</span>
+<span class="sd">        even if the &quot;sha_type&quot; argument isn&#39;t valid. This could be useful for inserting passwords into a database.</span>
+
+<span class="sd">        :param value: The value to hash</span>
+<span class="sd">        :param sha_type: The hashing algorithm to use</span>
+<span class="sd">        :param encoding: The encoding of the value</span>
+<span class="sd">        :return: str - The &quot;hexdigest&quot; string of the hash</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sha_type</span> <span class="o">=</span> <span class="n">sha_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">value_encoded</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sha_type</span> <span class="o">==</span> <span class="s1">&#39;sha1&#39;</span><span class="p">:</span>
+            <span class="n">sha</span> <span class="o">=</span> <span class="n">sha1</span>
+        <span class="k">elif</span> <span class="n">sha_type</span> <span class="o">==</span> <span class="s1">&#39;sha224&#39;</span><span class="p">:</span>
+            <span class="n">sha</span> <span class="o">=</span> <span class="n">sha224</span>
+        <span class="k">elif</span> <span class="n">sha_type</span> <span class="o">==</span> <span class="s1">&#39;sha384&#39;</span><span class="p">:</span>
+            <span class="n">sha</span> <span class="o">=</span> <span class="n">sha384</span>
+        <span class="k">elif</span> <span class="n">sha_type</span> <span class="o">==</span> <span class="s1">&#39;sha512&#39;</span><span class="p">:</span>
+            <span class="n">sha</span> <span class="o">=</span> <span class="n">sha512</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sha</span> <span class="o">=</span> <span class="n">sha256</span>
+        <span class="k">return</span> <span class="n">sha</span><span class="p">(</span><span class="n">value_encoded</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.uuid4">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.uuid4">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">uuid4</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a universal unique identifier (UUID) version 4. Can be useful for primary key generation, if that is the desired</span>
+<span class="sd">        primary key strategy of the database.</span>
+
+<span class="sd">        :return: str - The uuid v4</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span></div>
+
+
+    <span class="c1"># Transaction methods ##########################################################################################</span>
+<div class="viewcode-block" id="BaseDBPD.close">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.close">[docs]</a>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commit_on_quit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closes the current session with the database.</span>
+
+<span class="sd">        :param commit_on_quit: Boolean indicating if a final commit should be transacted before close</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">commit_on_quit</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="c1"># pyodbc with MS Access can sometimes close very slowly ~15 seconds, here we just throw it in a thread to not hold anything up</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_type</span> <span class="o">==</span> <span class="s1">&#39;access&#39;</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">close</span><span class="p">)</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1"># SqlAlchemy engines will be disposed of</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.commit">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.commit">[docs]</a>
+    <span class="k">def</span> <span class="nf">commit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Commits current transactions to the database</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.drop_all_tables">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.drop_all_tables">[docs]</a>
+    <span class="k">def</span> <span class="nf">drop_all_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Drops all tables from the database.</span>
+
+<span class="sd">        :param commit: Boolean indicating if this dropping transaction should be committed</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">table_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_names</span><span class="p">(</span><span class="n">show_names</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">table_names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;DROP TABLE IF EXISTS </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1"> CASCADE;&#39;</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">commit</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.drop_table">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.drop_table">[docs]</a>
+    <span class="k">def</span> <span class="nf">drop_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">commit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Drops a table from the database.</span>
+
+<span class="sd">        :param table_name: The table to be dropped</span>
+<span class="sd">        :param commit: Boolean indicating if this dropping transaction should be committed</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;DROP TABLE IF EXISTS </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s1"> CASCADE;&#39;</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">commit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.export_query_to_access">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.export_query_to_access">[docs]</a>
+    <span class="k">def</span> <span class="nf">export_query_to_access</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">out_filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">out_table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">in_sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">in_parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">in_show_head</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Will export query results to an MS Access database, only if the query returns results.</span>
+
+<span class="sd">        :param out_filepath: The filepath of the new Access database to be created</span>
+<span class="sd">        :param out_table_name: The name of the table that will be filled with the resulting data</span>
+<span class="sd">        :param in_sql: The sql statement to be executed</span>
+<span class="sd">        :param in_parameters: The parameters associated with a parameterized query</span>
+<span class="sd">        :param in_show_head: Boolean indicating if the head of the DataFrame should print to the console</span>
+<span class="sd">        :return: DataFrame of the result or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">out_filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.accdb&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">out_filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.mdb&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">AccessFileError</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">out_filepath</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">in_sql</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">in_parameters</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="n">in_show_head</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s1">&#39;Nothing to export, MS Access database will not be created&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">out_filepath</span><span class="p">):</span>
+            <span class="n">out_filepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_access_database</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">out_filepath</span><span class="p">)</span>
+
+        <span class="n">db_mgr</span> <span class="o">=</span> <span class="n">BaseDBPD</span><span class="p">(</span>
+            <span class="n">database_type</span><span class="o">=</span><span class="s1">&#39;access&#39;</span><span class="p">,</span>
+            <span class="n">filepath</span><span class="o">=</span><span class="n">out_filepath</span><span class="p">,</span>
+            <span class="n">show_description</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">out_table_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">db_mgr</span><span class="o">.</span><span class="n">table_names</span><span class="p">(</span><span class="n">show_names</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">create_table_sql</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access_generate_create_table_sql_from_dataframe</span><span class="p">(</span><span class="n">dataframe</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="n">out_table_name</span><span class="p">)</span>
+            <span class="n">db_mgr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">create_table_sql</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">db_mgr</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">secure_cols</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">]&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                <span class="n">insert_values</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_numpy_value</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">ii</span><span class="p">)</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span>
+                <span class="c1"># Although it may seem wise to create &quot;place_holders&quot; and &quot;insert&quot; above-outside of the for-loop because</span>
+                <span class="c1"># the &quot;insert_values&quot; length will always be the same &quot;columns&quot; length, however it is actually</span>
+                <span class="c1"># significantly (~7x) slower to do so, the reason is unknown to me currently, it may have to do</span>
+                <span class="c1"># with Python memory allocation or with pyodbc itself</span>
+                <span class="n">place_holders</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;?&#39;</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">insert_values</span><span class="p">))]</span>
+                <span class="n">insert</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;INSERT INTO </span><span class="si">{</span><span class="n">out_table_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">secure_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">) VALUES (</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">place_holders</span><span class="p">)</span><span class="si">}</span><span class="s2">);&quot;&quot;&quot;</span>
+                <span class="n">db_mgr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">insert</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">insert_values</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">db_mgr</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">df</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">db_mgr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.export_query_to_excel">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.export_query_to_excel">[docs]</a>
+    <span class="k">def</span> <span class="nf">export_query_to_excel</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">out_filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">out_table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">in_sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">in_parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">in_show_head</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Will export query results to an MS Excel sheet, only if the query returns results.</span>
+
+<span class="sd">        :param out_filepath: The filepath of the new Excel sheet to be created</span>
+<span class="sd">        :param out_table_name: The name of the table that will be filled with the resulting data</span>
+<span class="sd">        :param in_sql: The sql statement to be executed</span>
+<span class="sd">        :param in_parameters: The parameters associated with a parameterized query</span>
+<span class="sd">        :param in_show_head: Boolean indicating if the head of the DataFrame should print to the console</span>
+<span class="sd">        :return: DataFrame of the result or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">out_filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.xlsx&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExcelFileError</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">out_filepath</span><span class="p">)</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">out_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">file_already_existed</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">in_sql</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">in_parameters</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="n">in_show_head</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s1">&#39;Nothing to export, MS Excel sheet will not be created&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">excel_writer</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">out_table_name</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;openpyxl&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">df</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">file_already_existed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.export_query_to_sqlite">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.export_query_to_sqlite">[docs]</a>
+    <span class="k">def</span> <span class="nf">export_query_to_sqlite</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">out_filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">out_table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">in_sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">in_parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">in_show_head</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Will export query results to an SQLite database, only if the query returns results.</span>
+
+<span class="sd">        :param out_filepath: The filepath of the new SQLite database to be created</span>
+<span class="sd">        :param out_table_name: The name of the table that will be filled with the resulting data</span>
+<span class="sd">        :param in_sql: The sql statement to be executed</span>
+<span class="sd">        :param in_parameters: The parameters associated with a parameterized query</span>
+<span class="sd">        :param in_show_head: Boolean indicating if the head of the DataFrame should print to the console</span>
+<span class="sd">        :return: DataFrame of the result or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">out_filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.db&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">out_filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.sqlite&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">SqliteFileError</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">out_filepath</span><span class="p">)</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">out_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">file_already_existed</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">in_sql</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">in_parameters</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="n">in_show_head</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="s1">&#39;Nothing to export, SQLite database will not be created&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">fp</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">out_table_name</span><span class="p">,</span> <span class="n">con</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">df</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">file_already_existed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.insert_values">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.insert_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">insert_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">column_value_pairs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method can be used to insert values into a given table. The column_value_pairs keyword arguments can be used to</span>
+<span class="sd">        set the column name with the respective value.</span>
+
+<span class="sd">        :param table_name: The name of the table to insert values</span>
+<span class="sd">        :param column_value_pairs: Keyword arguments that represent the column names and their respective values</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">allowable_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">column_names</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">table_name</span><span class="p">,</span> <span class="n">show_names</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">column_value_pairs</span> <span class="o">=</span> <span class="p">{</span><span class="n">column</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">value</span> <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">column_value_pairs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">allowable_columns</span><span class="p">}</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">column_value_pairs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;access&#39;</span><span class="p">,</span> <span class="s1">&#39;sqlite&#39;</span><span class="p">]:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;?&#39;</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;:</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;INSERT INTO </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2">) VALUES (</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">column_value_pairs</span><span class="p">,</span> <span class="n">show_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warn_is_none</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.query">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.query">[docs]</a>
+    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">show_head</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">warn_is_none</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes any user defined sql statement and if this sql statement returns data such as from a SELECT statement,</span>
+<span class="sd">        the resulting data will be returned as a pandas DataFrame. Parameterized sql statements are accepted as well.</span>
+
+<span class="sd">        Note that if a query does not return data (as in the case of a modification statement) OR the query returns zero</span>
+<span class="sd">        results the return value will be None.</span>
+
+<span class="sd">        :param sql: The sql statement to be executed</span>
+<span class="sd">        :param parameters: The parameters associated with a parameterized query</span>
+<span class="sd">        :param show_head: Boolean indicating if the head of the resulting DataFrame should be printed to the console</span>
+<span class="sd">        :param index: Can be used to set the index of the resulting DataFrame</span>
+<span class="sd">        :param warn_is_none: Boolean indicating if a warning should be printed to the console when the query returns zero results</span>
+<span class="sd">        :return: DataFrame or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recent_query</span> <span class="o">=</span> <span class="n">sql</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;access&#39;</span><span class="p">,</span> <span class="s1">&#39;sqlite&#39;</span><span class="p">]:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access_sqlite_query</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sql</span> <span class="o">=</span> <span class="n">text</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">executed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">executed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">executed</span><span class="o">.</span><span class="n">returns_rows</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">executed</span><span class="o">.</span><span class="n">fetchall</span><span class="p">(),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">executed</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>  <span class="c1"># df defaults to None</span>
+
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">warn_is_none</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Query returned zero results, return object will be None&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">show_head</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">recent_df</span> <span class="o">=</span> <span class="n">df</span>
+            <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.rollback">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.rollback">[docs]</a>
+    <span class="k">def</span> <span class="nf">rollback</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rolls back the database to its most recent state.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_conn</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span></div>
+
+
+    <span class="c1"># Info methods ##########################################################################################</span>
+<div class="viewcode-block" id="BaseDBPD.column_names">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.column_names">[docs]</a>
+    <span class="k">def</span> <span class="nf">column_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">show_names</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of column names for a given table.</span>
+
+<span class="sd">        :param table_name: The name of the table in which the column names should be queried</span>
+<span class="sd">        :param show_names: Boolean indicating if the column names should be printed to the console</span>
+<span class="sd">        :return: list - The list of the column names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info_query_list</span><span class="p">(</span>
+            <span class="n">info_type</span><span class="o">=</span><span class="s1">&#39;columns&#39;</span><span class="p">,</span>
+            <span class="n">table_name</span><span class="o">=</span><span class="n">table_name</span><span class="p">,</span>
+            <span class="n">show_names</span><span class="o">=</span><span class="n">show_names</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDBPD.table_names">
+<a class="viewcode-back" href="../../dbpd.html#dbpd.dbpd.BaseDBPD.table_names">[docs]</a>
+    <span class="k">def</span> <span class="nf">table_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show_names</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of the table names within the database.</span>
+
+<span class="sd">        :param show_names: Boolean indicating if the table names should be printed to the console</span>
+<span class="sd">        :return: list - The list of the table names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info_query_list</span><span class="p">(</span>
+            <span class="n">info_type</span><span class="o">=</span><span class="s1">&#39;tables&#39;</span><span class="p">,</span>
+            <span class="n">show_names</span><span class="o">=</span><span class="n">show_names</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Zach Beebe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

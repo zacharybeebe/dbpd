@@ -1,0 +1,6 @@
+*/__pycache__/*
+/dist/
+/.idea/
+/dbpd.egg-info/
+/venv/
+./testing.py

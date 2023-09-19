@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to dbpd’s documentation! &mdash; dbpd 1.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=f2a433a1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            dbpd
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Welcome to dbpd’s documentation!</a></li>
+<li><a class="reference internal" href="#readme">README</a></li>
+<li><a class="reference internal" href="#dbpd">dbpd</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#connecting-to-a-database-1-direct">Connecting to a Database #1 - Direct</a></li>
+<li><a class="reference internal" href="#connecting-to-a-database-2-inheritance">Connecting to a Database #2 - Inheritance</a></li>
+<li><a class="reference internal" href="#other-examples">Other Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">dbpd</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to dbpd’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-dbpd-s-documentation">
+<h1>Welcome to dbpd’s documentation!<a class="headerlink" href="#welcome-to-dbpd-s-documentation" title="Link to this heading"></a></h1>
+</section>
+<section id="readme">
+<h1>README<a class="headerlink" href="#readme" title="Link to this heading"></a></h1>
+</section>
+<section id="dbpd">
+<h1>dbpd<a class="headerlink" href="#dbpd" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<p><strong>The main theme of this module is to establish a working relationship
+between relational databases and Pandas DataFrames; because these
+objects are tabular in nature, it reveals itself to be an efficient way
+to inspect, manage and manipulate a given database.</strong></p>
+<p>The dbpd.BaseDBPD class is the parent class for six child classes that
+are specific to different database types:</p>
+<div class="line-block">
+<div class="line">dbpd.Access</div>
+<div class="line">dbpd.MySQL</div>
+<div class="line">dbpd.Oracle</div>
+<div class="line">dbpd.Postgres</div>
+<div class="line">dbpd.SQLite</div>
+<div class="line">dbpd.SQLiteInMemory</div>
+</div>
+<p>Abstractions have been created such that working with these various
+database types is consistent throughout the user’s code base.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">query()</span></code> method is responsible for returning SELECT sql
+statements as their respective DataFrames. However the <code class="docutils literal notranslate"><span class="pre">query()</span></code>
+method can also be used to make changes to the database (such as INSERT,
+UPDATE, DELETE, etc.)</p>
+<p>Users are expected to write their own sql statements to query the
+database, and parameterized queries are accepted and encouraged as well.</p>
+<p>This is not meant to be an Object-Relational-Mapper (ORM) and has no
+such functionality, although it may be possible for users to create
+their own ORM using the classes herein.</p>
+<p>DOCUMENTATION <a class="reference external" href="https://zacharybeebe.github.io/dbpd/">https://zacharybeebe.github.io/dbpd/</a></p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>dbpd
+</pre></div>
+</div>
+</section>
+<section id="connecting-to-a-database-1-direct">
+<h2>Connecting to a Database #1 - Direct<a class="headerlink" href="#connecting-to-a-database-1-direct" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dbpd</span> <span class="kn">import</span> <span class="n">Oracle</span>
+
+<span class="n">oracle</span> <span class="o">=</span> <span class="n">Oracle</span><span class="p">(</span>
+    <span class="n">username</span><span class="o">=</span><span class="s1">&#39;example_username&#39;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s1">&#39;example_password&#39;</span><span class="p">,</span>
+    <span class="n">host</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span>
+    <span class="n">sid</span><span class="o">=</span><span class="s1">&#39;prod&#39;</span><span class="p">,</span>
+    <span class="n">port</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+    <span class="n">threaded</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;My Example Oracle database&#39;</span><span class="p">,</span>
+    <span class="n">show_description</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">dataframe</span> <span class="o">=</span> <span class="n">oracle</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM example_table&#39;</span><span class="p">)</span>
+<span class="n">oracle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="connecting-to-a-database-2-inheritance">
+<h2>Connecting to a Database #2 - Inheritance<a class="headerlink" href="#connecting-to-a-database-2-inheritance" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dbpd</span> <span class="kn">import</span> <span class="n">Postgres</span>
+
+<span class="k">class</span> <span class="nc">ExamplePostgres</span><span class="p">(</span><span class="n">Postgres</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ExamplePostgres</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s1">&#39;example_username&#39;</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="s1">&#39;example_password&#39;</span><span class="p">,</span>
+            <span class="n">host</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span>
+            <span class="n">database_name</span><span class="o">=</span><span class="s1">&#39;example&#39;</span><span class="p">,</span>
+            <span class="n">port</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+            <span class="n">postgres_schema</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="s1">&#39;My Example Postgres database&#39;</span><span class="p">,</span>
+            <span class="n">show_description</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">awesome_custom_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;I love pandas and databases&#39;</span><span class="p">)</span>
+
+<span class="n">pg</span> <span class="o">=</span> <span class="n">ExamplePostgres</span><span class="p">()</span>
+<span class="n">dataframe</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM public.example_table&#39;</span><span class="p">)</span>
+<span class="n">pg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="other-examples">
+<h2>Other Examples<a class="headerlink" href="#other-examples" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dbpd</span> <span class="kn">import</span> <span class="n">Access</span><span class="p">,</span> <span class="n">MySQL</span><span class="p">,</span> <span class="n">SQLite</span><span class="p">,</span> <span class="n">SQLiteInMemory</span>
+
+<span class="c1"># Connect to existing Access Database</span>
+<span class="n">existing_access</span> <span class="o">=</span> <span class="n">Access</span><span class="p">(</span>
+    <span class="n">filepath</span><span class="o">=</span><span class="s1">&#39;path/to/existing/access.accdb&#39;</span><span class="p">,</span>
+    <span class="n">fernet_encryption_key</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&lt;theFernetEncryptionKeyForYourDatabase&gt;&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;My Existing Access database&#39;</span><span class="p">,</span>
+    <span class="n">show_description</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">existing_access</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1">#####################################################################</span>
+<span class="c1"># Create new, blank Access Database</span>
+<span class="n">new_access</span> <span class="o">=</span> <span class="n">Access</span><span class="p">(</span>
+    <span class="n">filepath</span><span class="o">=</span><span class="s1">&#39;path/to/non-existent/access.accdb&#39;</span><span class="p">,</span>
+    <span class="n">fernet_encryption_key</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&lt;theFernetEncryptionKeyForYourDatabase&gt;&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;My New Access database&#39;</span><span class="p">,</span>
+    <span class="n">show_description</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">new_access</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+    <span class="n">sql</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    CREATE TABLE my_table (</span>
+<span class="s2">        [a_number]  INTEGER,</span>
+<span class="s2">        [a_date]    DATETIME,</span>
+<span class="s2">        [a_double]  DOUBLE,</span>
+<span class="s2">        [a_string]  VARCHAR</span>
+<span class="s2">    );</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+<span class="p">)</span>
+<span class="n">new_access</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="n">new_access</span><span class="o">.</span><span class="n">insert_values</span><span class="p">(</span>
+    <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;my_table&#39;</span><span class="p">,</span>
+    <span class="n">a_number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">a_date</span><span class="o">=</span><span class="n">new_access</span><span class="o">.</span><span class="n">dt_now</span><span class="p">(),</span>
+    <span class="n">a_double</span><span class="o">=</span><span class="mf">22.22</span><span class="p">,</span>
+    <span class="n">a_string</span><span class="o">=</span><span class="s1">&#39;HelloWorld&#39;</span>
+<span class="p">)</span>
+<span class="n">new_access</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="n">new_access</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1">#####################################################################</span>
+<span class="c1"># Connect to MySQL Database</span>
+<span class="n">mysql</span> <span class="o">=</span> <span class="n">MySQL</span><span class="p">(</span>
+    <span class="n">username</span><span class="o">=</span><span class="s1">&#39;example_username&#39;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s1">&#39;example_password&#39;</span><span class="p">,</span>
+    <span class="n">host</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span>
+    <span class="n">database_name</span><span class="o">=</span><span class="s1">&#39;example&#39;</span><span class="p">,</span>
+    <span class="n">port</span><span class="o">=</span><span class="mi">5000</span>
+<span class="p">)</span>
+<span class="c1"># Export query to SQLite database</span>
+<span class="n">dataframe</span> <span class="o">=</span> <span class="n">mysql</span><span class="o">.</span><span class="n">export_query_to_sqlite</span><span class="p">(</span>
+    <span class="n">out_filepath</span><span class="o">=</span><span class="s1">&#39;path/to/export/sqlite.db&#39;</span><span class="p">,</span>
+    <span class="n">out_table_name</span><span class="o">=</span><span class="s1">&#39;exported_table&#39;</span><span class="p">,</span>
+    <span class="n">in_sql</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        SELECT</span>
+<span class="s2">            A.*,</span>
+<span class="s2">            B.*</span>
+<span class="s2">        FROM</span>
+<span class="s2">            example_table A</span>
+<span class="s2">        LEFT JOIN (</span>
+<span class="s2">            SELECT</span>
+<span class="s2">                *</span>
+<span class="s2">            FROM</span>
+<span class="s2">                other_table</span>
+<span class="s2">        ) B ON A.id = B.id</span>
+<span class="s2">        WHERE</span>
+<span class="s2">            A.column = :value</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="n">in_parameters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;This value&#39;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="n">mysql</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1">#####################################################################</span>
+<span class="c1"># Connect to an Existing SQLite database</span>
+<span class="n">existing_sqlite</span> <span class="o">=</span> <span class="n">SQLite</span><span class="p">(</span>
+    <span class="n">filepath</span><span class="o">=</span><span class="s1">&#39;path/to/existing/sqlite.db&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">existing_sqlite</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1">#####################################################################</span>
+<span class="c1"># Create a new, blank SQLite database</span>
+<span class="n">new_sqlite</span> <span class="o">=</span> <span class="n">SQLite</span><span class="p">(</span>
+    <span class="n">filepath</span><span class="o">=</span><span class="s1">&#39;path/to/non-existent/sqlite.db&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">new_sqlite</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1">#####################################################################</span>
+<span class="c1"># Create a new in-memory SQLite database and save to disk</span>
+<span class="n">in_mem_sqlite</span> <span class="o">=</span> <span class="n">SQLiteInMemory</span><span class="p">()</span>
+<span class="n">in_mem_sqlite</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+    <span class="n">sql</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        CREATE TABLE my_table (</span>
+<span class="s2">            [a_number]  INTEGER,</span>
+<span class="s2">            [a_date]    DATETIME,</span>
+<span class="s2">            [a_double]  DOUBLE,</span>
+<span class="s2">            [a_string]  VARCHAR</span>
+<span class="s2">        );</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+<span class="p">)</span>
+<span class="n">in_mem_sqlite</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="n">in_mem_sqlite</span><span class="o">.</span><span class="n">insert_values</span><span class="p">(</span>
+    <span class="n">table_name</span><span class="o">=</span><span class="s1">&#39;my_table&#39;</span><span class="p">,</span>
+    <span class="n">a_number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">a_date</span><span class="o">=</span><span class="n">new_access</span><span class="o">.</span><span class="n">dt_now</span><span class="p">(),</span>
+    <span class="n">a_double</span><span class="o">=</span><span class="mf">22.22</span><span class="p">,</span>
+    <span class="n">a_string</span><span class="o">=</span><span class="s1">&#39;HelloWorld&#39;</span>
+<span class="p">)</span>
+<span class="n">in_mem_sqlite</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="n">saved_sqlite</span> <span class="o">=</span> <span class="n">in_mem_sqlite</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span>
+    <span class="n">filepath</span><span class="o">=</span><span class="s1">&#39;path/to/sqlite.db&#39;</span><span class="p">,</span>
+    <span class="n">return_new_database_manager</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">in_mem_sqlite</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">dataframe</span> <span class="o">=</span> <span class="n">saved_sqlite</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM my_table&#39;</span><span class="p">)</span>
+<span class="n">saved_sqlite</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Zach Beebe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
