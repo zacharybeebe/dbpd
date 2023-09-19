@@ -33,3 +33,7 @@ goto end
 
 :end
 popd
+
+
+REM This is custom for copying the html build files into the docs folder for GitHub hosting
+xcopy /s /y .\_build\html\. ..\docs
