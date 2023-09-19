@@ -18,7 +18,9 @@
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="README" href="quickstart.html" />
+    <link rel="prev" title="dbpd" href="modules.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -40,81 +42,44 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">dbpd package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-dbpd.access">dbpd.access module</a><ul>
-<li><a class="reference internal" href="#dbpd.access.Access"><code class="docutils literal notranslate"><span class="pre">Access</span></code></a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">dbpd package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dbpd.access">dbpd.access module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dbpd.access.Access"><code class="docutils literal notranslate"><span class="pre">Access</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-dbpd.dbpd">dbpd.dbpd module</a><ul>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD"><code class="docutils literal notranslate"><span class="pre">BaseDBPD</span></code></a><ul>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.AccessFileError"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.AccessFileError</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.COLUMN_NAME_QUERIES"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.COLUMN_NAME_QUERIES</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.EncryptionKeyError"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.EncryptionKeyError</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.ExcelFileError"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.ExcelFileError</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.InitFileError"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.InitFileError</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.SqliteFileError"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.SqliteFileError</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.TABLE_NAME_QUERIES"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.TABLE_NAME_QUERIES</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.access_driver"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.access_driver()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.close"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.close()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.column_names"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.column_names()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.commit"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.commit()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.convert_numpy_value"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.convert_numpy_value()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.create_access_database"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.create_access_database()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.create_sqlite_database"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.create_sqlite_database()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.decrypt_value"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.decrypt_value()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.decrypt_value_static"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.decrypt_value_static()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.drop_all_tables"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.drop_all_tables()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.drop_table"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.drop_table()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.dt_now"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.dt_now()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.dt_today"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.dt_today()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.encrypt_value"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.encrypt_value()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.encrypt_value_static"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.encrypt_value_static()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.export_query_to_access"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.export_query_to_access()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.export_query_to_excel"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.export_query_to_excel()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.export_query_to_sqlite"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.export_query_to_sqlite()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.flatten_sql"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.flatten_sql()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.generate_fernet_encryption_key"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.generate_fernet_encryption_key()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.init_table_schemas_from_files"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.init_table_schemas_from_files()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.init_table_schemas_from_sql"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.init_table_schemas_from_sql()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.insert_values"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.insert_values()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.isna"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.isna()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.query"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.query()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.rollback"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.rollback()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.sha_hash"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.sha_hash()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.table_names"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.table_names()</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.dbpd.BaseDBPD.uuid4"><code class="docutils literal notranslate"><span class="pre">BaseDBPD.uuid4()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dbpd.dbpd">dbpd.dbpd module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dbpd.dbpd.BaseDBPD"><code class="docutils literal notranslate"><span class="pre">BaseDBPD</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dbpd.mysql">dbpd.mysql module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dbpd.mysql.MySQL"><code class="docutils literal notranslate"><span class="pre">MySQL</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dbpd.oracle">dbpd.oracle module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dbpd.oracle.Oracle"><code class="docutils literal notranslate"><span class="pre">Oracle</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dbpd.postgres">dbpd.postgres module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dbpd.postgres.Postgres"><code class="docutils literal notranslate"><span class="pre">Postgres</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dbpd.sqlite">dbpd.sqlite module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dbpd.sqlite.SQLite"><code class="docutils literal notranslate"><span class="pre">SQLite</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dbpd.sqlite.SQLiteInMemory"><code class="docutils literal notranslate"><span class="pre">SQLiteInMemory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-dbpd">Module contents</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-dbpd.mysql">dbpd.mysql module</a><ul>
-<li><a class="reference internal" href="#dbpd.mysql.MySQL"><code class="docutils literal notranslate"><span class="pre">MySQL</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">quickstart</a></li>
 </ul>
-</li>
-<li><a class="reference internal" href="#module-dbpd.oracle">dbpd.oracle module</a><ul>
-<li><a class="reference internal" href="#dbpd.oracle.Oracle"><code class="docutils literal notranslate"><span class="pre">Oracle</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-dbpd.postgres">dbpd.postgres module</a><ul>
-<li><a class="reference internal" href="#dbpd.postgres.Postgres"><code class="docutils literal notranslate"><span class="pre">Postgres</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-dbpd.sqlite">dbpd.sqlite module</a><ul>
-<li><a class="reference internal" href="#dbpd.sqlite.SQLite"><code class="docutils literal notranslate"><span class="pre">SQLite</span></code></a></li>
-<li><a class="reference internal" href="#dbpd.sqlite.SQLiteInMemory"><code class="docutils literal notranslate"><span class="pre">SQLiteInMemory</span></code></a><ul>
-<li><a class="reference internal" href="#dbpd.sqlite.SQLiteInMemory.save_as"><code class="docutils literal notranslate"><span class="pre">SQLiteInMemory.save_as()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-dbpd">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -129,6 +94,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">dbpd</a></li>
       <li class="breadcrumb-item active">dbpd package</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/dbpd.rst.txt" rel="nofollow"> View page source</a>
@@ -829,7 +795,10 @@ The first argument for sqlite3.connect() will be ‘:memory:’</p>
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="dbpd" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="README" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
